@@ -79,24 +79,41 @@
                 </div>
         </div>
     </div>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
-    <script>
-        const bc = new BroadcastChannel('hospital_tv');
+<script>
+    // 2. Configuration yawe (Simbura iyi n'iyo wakuye kuri Firebase Console)
+    const firebaseConfig = {
+        apiKey: "AIza...",
+        authDomain: "laprovidence.firebaseapp.com",
+        databaseURL: "https://laprovidence-default-rtdb.firebaseio.com",
+        projectId: "laprovidence",
+        storageBucket: "laprovidence.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-        function getData(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+    // Gutangiza Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const queueRef = db.ref('queue');
 
-        function addPatient() {
-            let nameInput = document.getElementById('pName');
-            let name = nameInput.value.trim();
-            
-            if(!name) {
-                alert("Nyamuneka andika izina!");
-                return;
-            }
+    // 3. ANDIKA UMURWAYI MUSHYA
+    function addPatient() {
+        let nameInput = document.getElementById('pName');
+        let name = nameInput.value.trim();
+        
+        if(!name) {
+            alert("Nyamuneka andika izina!");
+            return;
+        }
 
-            let pending = getData('p');
-            let daily = getData('dr');
-            let counter = parseInt(localStorage.getItem('cnt')) || 1;
+        // Guhamagara amakuru ariho ubu kugira ngo tumenye ID n'urutonde
+        queueRef.once('value').then((snapshot) => {
+            const data = snapshot.val() || {};
+            let pending = data.p || [];
+            let counter = data.cnt || 1; // Counter ibikwa kuri Firebase aho kuba kuri PC imwe
 
             let newP = {
                 id: "P-" + String(counter).padStart(3, '0'),
@@ -105,53 +122,50 @@
             };
 
             pending.push(newP);
-            daily.unshift(newP);
             
-            localStorage.setItem('p', JSON.stringify(pending));
-            localStorage.setItem('dr', JSON.stringify(daily));
-            localStorage.setItem('cnt', counter + 1);
+            // Kubika kuri Firebase (Bihita bijya kwa Muganga na TV)
+            queueRef.update({
+                p: pending,
+                cnt: counter + 1
+            });
 
-            nameInput.value = "";
-            bc.postMessage('update'); // Menyesha TV na Muganga
-            render();
+            nameInput.value = ""; // Guhanagura mu gasanduku
+            nameInput.focus();
+        });
+    }
+
+    // 4. SIBA UMURWAYI
+    function deletePatient(id) {
+        if(confirm("Ushaka gusiba uyu murwayi mu rutonde?")) {
+            queueRef.once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                let pending = (data.p || []).filter(p => p.id !== id);
+                
+                queueRef.update({ p: pending });
+            });
+        }
+    }
+
+    // 5. KUVUGURURA ISURA (UI) - Bihita biba iyo hari umuntu muganga akuyeho
+    queueRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const pending = data.p || [];
+        const listDiv = document.getElementById('patientList');
+        
+        if(pending.length === 0) {
+            listDiv.innerHTML = `<div class="empty-msg">Nta murwayi uri ku murongo ubu.</div>`;
+            return;
         }
 
-        function deletePatient(id) {
-            if(confirm("Ushaka gusiba uyu murwayi mu rutonde?")) {
-                let pending = getData('p').filter(p => p.id !== id);
-                let daily = getData('dr').filter(p => p.id !== id);
-                
-                localStorage.setItem('p', JSON.stringify(pending));
-                localStorage.setItem('dr', JSON.stringify(daily));
-                
-                bc.postMessage('update'); // Menyesha TV na Muganga
-                render();
-            }
-        }
-
-        function render() {
-            let pending = getData('p');
-            let listDiv = document.getElementById('patientList');
-            
-            if(pending.length === 0) {
-                listDiv.innerHTML = `<div class="empty-msg">Nta murwayi uri ku murongo ubu.</div>`;
-                return;
-            }
-
-            listDiv.innerHTML = pending.map(p => `
-                <div class="patient-item">
-                    <div class="patient-info">
-                        <b>${p.id}</b> <span>${p.name}</span>
-                    </div>
-                    <button class="btn-del" onclick="deletePatient('${p.id}')">SIBA</button>
+        listDiv.innerHTML = pending.map(p => `
+            <div class="patient-item">
+                <div class="patient-info">
+                    <b>${p.id}</b> <span>${p.name}</span>
                 </div>
-            `).join('');
-        }
-
-        // Iyo hagize igihinduka ahandi (kwa muganga), na hano bihinduke
-        bc.onmessage = () => render();
-
-        render();
-    </script>
+                <button class="btn-del" onclick="deletePatient('${p.id}')">SIBA</button>
+            </div>
+        `).join('');
+    });
+</script>
 </body>
 </html>
