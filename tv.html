@@ -107,48 +107,77 @@
 
     <audio id="ding" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
-    <script>
-        const bc = new BroadcastChannel('hospital_sync');
-        const ding = document.getElementById('ding');
+   <script>
+    // 1. Configuration yawe (Simbura iyi n'iyo wakuye kuri Firebase Console)
+    const firebaseConfig = {
+        apiKey: "AIza...",
+        authDomain: "laprovidence.firebaseapp.com",
+        databaseURL: "https://laprovidence-default-rtdb.firebaseio.com",
+        projectId: "laprovidence",
+        storageBucket: "laprovidence.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-        function updateTV() {
-            const current = JSON.parse(localStorage.getItem('c'));
-            const pending = JSON.parse(localStorage.getItem('p')) || [];
-            const missed = JSON.parse(localStorage.getItem('m')) || [];
+    // Gutangiza Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const queueRef = db.ref('queue');
+    const ding = document.getElementById('ding');
 
-            const oldId = document.getElementById('currId').innerText;
-            const newId = current ? current.id : "--";
+    let lastId = null; // Twifashisha iyi kugira ngo tumenye niba hari uwinjiye mushya
+
+    // 2. KUVUGURURA TV (Biba mu buryo bwikora amakuru ahindutse)
+    queueRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const current = data.c || null;      // Uwinjiye ubu
+        const pending = data.p || [];       // Abategereje
+        const missed = data.m || [];        // Abasibye
+
+        const newId = current ? current.id : "--";
+        const newName = current ? current.name : "KANDI 'NEXT'";
+
+        // Kwerekana nimero n'izina hagati
+        document.getElementById('currId').innerText = newId;
+        document.getElementById('currName').innerText = newName;
+
+        // Niba uje ari mushya, vuga "Ding" kandi ukube (Flash)
+        if (newId !== lastId && newId !== "--") {
+            ding.play().catch(() => {
+                console.log("Kanda kuri TV rimwe kugira ngo ijwi ryemerwe!");
+            });
             
-            document.getElementById('currId').innerText = newId;
-            document.getElementById('currName').innerText = current ? current.name : "KANDI 'NEXT'";
-
-            if (newId !== oldId && newId !== "--") {
-                ding.play().catch(() => {});
-                const box = document.getElementById('mainBox');
-                box.classList.add('new-call-flash');
-                setTimeout(() => box.classList.remove('new-call-flash'), 5000);
-            }
-
-            // Waiting (Ubu tushobora kwerekana benshi kuko ari hanini)
-            document.getElementById('waitingList').innerHTML = pending.slice(0, 10).map(p => `
-                <div class="row waiting-row">
-                    <span class="name">${p.name}</span>
-                    <span class="id">${p.id}</span>
-                </div>
-            `).join('') || '<div style="text-align:center; opacity:0.2; margin-top:50px;">-</div>';
-
-            // Missed (Turekane bake kuko ari hato)
-            document.getElementById('missedList').innerHTML = missed.slice(-6).reverse().map(p => `
-                <div class="row missed-row">
-                    <span class="name">${p.name}</span>
-                    <span class="id">${p.id}</span>
-                </div>
-            `).join('') || '<div style="text-align:center; opacity:0.2; margin-top:50px;">-</div>';
+            const box = document.getElementById('mainBox');
+            box.classList.add('new-call-flash');
+            setTimeout(() => box.classList.remove('new-call-flash'), 5000);
+            
+            lastId = newId; // Reba ko uyu muntu twamaze kumwakira
         }
 
-        bc.onmessage = () => updateTV();
-        window.onclick = () => { ding.play().then(()=>ding.pause()); };
-        updateTV();
-    </script>
+        // Kwerekana urutonde rw'abategereje (Waiting List)
+        document.getElementById('waitingList').innerHTML = pending.slice(0, 8).map(p => `
+            <div class="row waiting-row">
+                <span class="name">${p.name}</span>
+                <span class="id">${p.id}</span>
+            </div>
+        `).join('') || '<div style="text-align:center; opacity:0.2; margin-top:50px;">Nta muntu uri ku murongo</div>';
+
+        // Kwerekana urutonde rw'abasibye (Missed List)
+        document.getElementById('missedList').innerHTML = missed.slice(-5).reverse().map(p => `
+            <div class="row missed-row">
+                <span class="name">${p.name}</span>
+                <span class="id">${p.id}</span>
+            </div>
+        `).join('') || '<div style="text-align:center; opacity:0.2; margin-top:20px;">-</div>';
+    });
+
+    // Akanyabugabo: Browser ntibyemera ko ijwi ryi-play-inga utarabanza gukanda kuri page.
+    window.onclick = () => {
+        ding.play().then(() => {
+            ding.pause();
+            console.log("Audio Enabled!");
+        });
+    };
+</script>
 </body>
 </html>
