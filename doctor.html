@@ -60,103 +60,117 @@
         </div>
     </div>
 
-    <script>
-        const bc = new BroadcastChannel('hospital_sync');
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
-        // Gufata amakuru muri LocalStorage
-        function getData(key) {
-            return JSON.parse(localStorage.getItem(key)) || [];
-        }
+<script>
+    // 2. Configuration yawe (Kope hano yawe uvanye kuri Firebase Console)
+    const firebaseConfig = {
+        apiKey: "AIza...",
+        authDomain: "laprovidence.firebaseapp.com",
+        databaseURL: "https://laprovidence-default-rtdb.firebaseio.com",
+        projectId: "laprovidence",
+        storageBucket: "laprovidence.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-        // Kubika amakuru muri LocalStorage
-        function saveData(key, data) {
-            localStorage.setItem(key, JSON.stringify(data));
-        }
+    // Gutangiza Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const queueRef = db.ref('queue');
 
-        // 1. HAMAGARA NEXT
-        function callNext() {
-            let pending = getData('p');
+    // 3. HAMAGARA NEXT
+    function callNext() {
+        queueRef.once('value').then((snapshot) => {
+            const data = snapshot.val() || {};
+            let pending = data.p || [];
+            
             if (pending.length > 0) {
-                let nextPatient = pending.shift(); // Kuramo uwa mbere
-                saveData('p', pending);
-                saveData('c', nextPatient); // Mubike nka "Current"
-                bc.postMessage('update'); // Menyesha TV
-                updateUI();
+                const nextPatient = pending.shift(); // Kuramo uwa mbere
+                queueRef.update({
+                    p: pending,
+                    c: nextPatient // Mubike nka "Current"
+                });
             } else {
                 alert("Nta murwayi uri ku rutonde!");
             }
-        }
+        });
+    }
 
-        // 2. KOHEREZA MURI LAB
-        function sendToLab() {
-            let current = JSON.parse(localStorage.getItem('c'));
-            if (current) {
-                let lab = getData('l');
-                lab.push(current);
-                saveData('l', lab);
-                localStorage.removeItem('c'); // Kuramo uwo wakiraga
-                bc.postMessage('update');
-                updateUI();
+    // 4. KOHEREZA MURI LAB
+    function sendToLab() {
+        queueRef.once('value').then((snapshot) => {
+            const data = snapshot.val() || {};
+            if (data.c) {
+                let lab = data.l || [];
+                lab.push(data.c);
+                queueRef.update({
+                    l: lab,
+                    c: null // Kuraho uwo wakiraga
+                });
             }
-        }
+        });
+    }
 
-        // 3. MARK AS MISSED
-        function markAsMissed() {
-            let current = JSON.parse(localStorage.getItem('c'));
-            if (current) {
-                let missed = getData('m');
-                missed.push(current);
-                saveData('m', missed);
-                localStorage.removeItem('c');
-                bc.postMessage('update');
-                updateUI();
+    // 5. MARK AS MISSED (ABUZE)
+    function markAsMissed() {
+        queueRef.once('value').then((snapshot) => {
+            const data = snapshot.val() || {};
+            if (data.c) {
+                let missed = data.m || [];
+                missed.push(data.c);
+                queueRef.update({
+                    m: missed,
+                    c: null
+                });
             }
-        }
+        });
+    }
 
-        // 4. GUHAMAGARA UVUYE MURI LAB CYANE UWA MISSED
-        function recall(id, type) {
-            let list = getData(type);
-            let patient = list.find(p => p.id === id);
-            let filtered = list.filter(p => p.id !== id);
+    // 6. RECALL (Guhamagara uvuye muri Lab cyangwa Missed)
+    function recall(id, type) {
+        queueRef.once('value').then((snapshot) => {
+            const data = snapshot.val() || {};
+            let list = data[type] || [];
+            const patient = list.find(p => p.id === id);
+            const filtered = list.filter(p => p.id !== id);
             
-            saveData(type, filtered);
-            saveData('c', patient);
-            bc.postMessage('update');
-            updateUI();
-        }
+            let updates = {};
+            updates[type] = filtered;
+            updates['c'] = patient;
+            
+            queueRef.update(updates);
+        });
+    }
 
-        // KUVUGURURA ISURA (UI)
-        function updateUI() {
-            const current = JSON.parse(localStorage.getItem('c'));
-            const lab = getData('l');
-            const missed = getData('m');
+    // 7. KUVUGURURA ISURA (UI) - Ibi biba ako kanya (Real-time)
+    queueRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const current = data.c || null;
+        const lab = data.l || [];
+        const missed = data.m || [];
 
-            // Update Current
-            document.getElementById('currId').innerText = current ? current.id : "--";
-            document.getElementById('currName').innerText = current ? current.name : "READY";
+        // Update Current Patient Display
+        document.getElementById('currId').innerText = current ? current.id : "--";
+        document.getElementById('currName').innerText = current ? current.name : "READY";
 
-            // Update Lab List
-            document.getElementById('labList').innerHTML = lab.map(p => `
-                <div class="patient-row">
-                    <span><b>${p.id}</b> ${p.name}</span>
-                    <button class="btn btn-recall" onclick="recall('${p.id}', 'l')">CALL</button>
-                </div>
-            `).join('') || '<p class="empty-text">Nta muntu uri muri Lab</p>';
+        // Update Lab List
+        document.getElementById('labList').innerHTML = lab.map(p => `
+            <div class="patient-row">
+                <span><b>${p.id}</b> ${p.name}</span>
+                <button class="btn btn-recall" onclick="recall('${p.id}', 'l')">CALL</button>
+            </div>
+        `).join('') || '<p class="empty-text">Nta muntu uri muri Lab</p>';
 
-            // Update Missed List
-            document.getElementById('missedList').innerHTML = missed.map(p => `
-                <div class="patient-row">
-                    <span><b>${p.id}</b> ${p.name}</span>
-                    <button class="btn btn-recall" onclick="recall('${p.id}', 'm')">RE-CALL</button>
-                </div>
-            `).join('') || '<p class="empty-text">Nta muntu wasibye</p>';
-        }
-
-        // Iyo Reception yanditse umuntu mushya, bihite bivugururwa hano
-        bc.onmessage = () => updateUI();
-        
-        // Gutangira
-        updateUI();
-    </script>
+        // Update Missed List
+        document.getElementById('missedList').innerHTML = missed.map(p => `
+            <div class="patient-row">
+                <span><b>${p.id}</b> ${p.name}</span>
+                <button class="btn btn-recall" onclick="recall('${p.id}', 'm')">RE-CALL</button>
+            </div>
+        `).join('') || '<p class="empty-text">Nta muntu wasibye</p>';
+    });
+</script>
 </body>
 </html>
