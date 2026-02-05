@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <title>La Providence - Admin Panel</title>
+    <style>
+        :root {
+            --bg: #f8fafc; --card: #ffffff;
+            --primary: #1e293b; --accent: #38bdf8;
+            --danger: #ef4444; --success: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; background: var(--bg);
+            margin: 0; padding: 20px; color: var(--primary);
+        }
+
+        .header {
+            background: var(--primary); color: white; padding: 20px;
+            border-radius: 15px; margin-bottom: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+
+        .stat-card {
+            background: var(--card); padding: 25px; border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+
+        .stat-card h3 { margin: 0; color: #64748b; font-size: 0.9rem; text-transform: uppercase; }
+        .stat-card .value { font-size: 2.5rem; font-weight: 800; margin: 10px 0; }
+
+        .controls {
+            margin-top: 30px; background: white; padding: 30px;
+            border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+
+        .log-section {
+            margin-top: 20px; background: #0f172a; color: #10b981;
+            padding: 20px; border-radius: 10px; font-family: monospace;
+            height: 200px; overflow-y: auto; font-size: 0.85rem;
+        }
+
+        .hospital-name { font-weight: 900; letter-spacing: 2px; }
+        .hospital-name span { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="hospital-name">LA <span>PROVIDENCE</span></div>
+        <div>ADMINISTRATION SYSTEM</div>
+    </div>
+
+    <div class="grid">
+        <div class="stat-card">
+            <h3>Bategereje</h3>
+            <div class="value" id="countPending">0</div>
+        </div>
+        <div class="stat-card" style="border-bottom-color: var(--success)">
+            <h3>Kwa Muganga</h3>
+            <div class="value" id="countCurrent">0</div>
+        </div>
+        <div class="stat-card" style="border-bottom-color: var(--warning)">
+            <h3>Muri Lab / Missed</h3>
+            <div class="value" id="countLab">0</div>
+        </div>
+        <div class="stat-card" style="border-bottom-color: #a855f7">
+            <h3>Total Today</h3>
+            <div class="value" id="countTotal">0</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <h2>System Controls</h2>
+        <p>Gukanda iyi buto birasiba amakuru yose y'uyu munsi. Bikore gusa iyo akazi karangiye.</p>
+        <button class="btn btn-danger" onclick="resetSystem()">RESET SYSTEM (CLEAR ALL)</button>
+    </div>
+
+    <div class="log-section" id="adminLog">
+        > System Initialized...<br>
+        > Waiting for updates...
+    </div>
+
+    <script>
+        const bc = new BroadcastChannel('hospital_tv');
+
+        function updateAdmin() {
+            const pending = JSON.parse(localStorage.getItem('p')) || [];
+            const current = JSON.parse(localStorage.getItem('c'));
+            const lab = JSON.parse(localStorage.getItem('l')) || [];
+            const missed = JSON.parse(localStorage.getItem('m')) || [];
+            
+            // Stats
+            document.getElementById('countPending').innerText = pending.length;
+            document.getElementById('countCurrent').innerText = current ? 1 : 0;
+            document.getElementById('countLab').innerText = lab.length + missed.length;
+            
+            // Total Estimate (This is a simple count)
+            const total = pending.length + (current ? 1 : 0) + lab.length + missed.length;
+            document.getElementById('countTotal').innerText = total;
+
+            addLog("Amakuru yavuguruwe (System Sync)");
+        }
+
+        function resetSystem() {
+            if (confirm("Uribuka neza ko ushaka gusiba abarwayi bose?")) {
+                localStorage.clear();
+                bc.postMessage('update');
+                updateAdmin();
+                addLog("SYSTEM RESET: Abarwayi bose basibwe!");
+            }
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('adminLog');
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `<br>> [${time}] ${msg}`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        bc.onmessage = () => updateAdmin();
+        updateAdmin();
+    </script>
+</body>
+</html>

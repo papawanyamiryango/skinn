@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <title>La Providence - Main Menu</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a; color: white;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; margin: 0;
+        }
+        .header { text-align: center; margin-bottom: 50px; }
+        .header h1 { font-size: 3rem; letter-spacing: 5px; }
+        .header span { color: #00f2ff; }
+        
+        .menu-grid {
+            display: grid; grid-template-columns: repeat(2, 250px);
+            gap: 20px;
+        }
+        .menu-card {
+            background: #1e293b; padding: 40px; border-radius: 20px;
+            text-align: center; cursor: pointer; transition: 0.3s;
+            border: 2px solid #334155; text-decoration: none; color: white;
+        }
+        .menu-card:hover {
+            border-color: #00f2ff; background: #2d3e50;
+            transform: translateY(-5px);
+        }
+        .menu-card i { font-size: 3rem; display: block; margin-bottom: 15px; }
+        .menu-card h3 { margin: 0; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>LA <span>PROVIDENCE</span></h1>
+        <p>HOSPITAL MANAGEMENT SYSTEM</p>
+    </div>
+
+    <div class="menu-grid">
+        <a href="reception.html" target="_blank" class="menu-card">
+            <h3>RECEPTION</h3>
+            <p>Kwiyandikisha</p>
+        </a>
+        <a href="doctor.html" target="_blank" class="menu-card">
+            <h3>DOCTOR</h3>
+            <p>Guhamagara</p>
+        </a>
+        <a href="tv.html" target="_blank" class="menu-card">
+            <h3>TV DISPLAY</h3>
+            <p>Hanze kuri TV</p>
+        </a>
+        <a href="admin.html" target="_blank" class="menu-card">
+            <h3>ADMIN</h3>
+            <p>Genzura Sisitemu</p>
+        </a>
+    </div>
+
+</body>
+</html>

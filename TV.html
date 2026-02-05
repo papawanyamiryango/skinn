@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <title>La Providence - TV Display</title>
+    <style>
+        :root {
+            --bg: #020617; 
+            --card: #1e293b;
+            --accent: #00f2ff; 
+            --warning: #f59e0b;
+            --text-main: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg); color: var(--text-main);
+            margin: 0; padding: 20px; overflow: hidden; height: 100vh;
+            display: grid; 
+            grid-template-rows: auto 1fr; /* Umwanya w'izina hejuru */
+            grid-template-columns: 1.8fr 1.2fr; 
+            gap: 20px;
+            box-sizing: border-box;
+        }
+
+        /* HEADER: LA PROVIDENCE */
+        .hospital-header {
+            grid-column: span 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(90deg, transparent, #1e293b, transparent);
+            padding: 10px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .hospital-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            font-weight: 900;
+            color: var(--text-main);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .hospital-header span { color: var(--accent); }
+
+        /* IBUMOSO: UWO BAHAMAGAYE MUSHYA */
+        .now-calling {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 40px; border: 5px solid #334155;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+            position: relative;
+        }
+
+        .label-top {
+            position: absolute; top: 40px; font-size: 1.5rem;
+            color: var(--accent); font-weight: 800; letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .current-id {
+            font-size: 16rem; font-weight: 900; color: var(--accent);
+            line-height: 0.8; margin-top: 30px;
+            text-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
+        }
+
+        .current-name {
+            font-size: 4.5rem; font-weight: 700; margin-top: 30px;
+            text-align: center; color: white; width: 90%;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* IBURYO: URUTONDE */
+        .side-lists { display: flex; flex-direction: column; gap: 20px; }
+
+        .list-box {
+            background: var(--card); border-radius: 30px; padding: 25px;
+            flex: 1; border-left: 10px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .list-box.missed { border-left-color: var(--warning); }
+
+        h2 {
+            margin: 0 0 15px 0; font-size: 1.3rem; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 2px;
+            border-bottom: 1px solid #334155; padding-bottom: 10px;
+        }
+
+        .row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #334155;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .row:last-child { border: none; }
+        .row .name { font-size: 1.6rem; font-weight: 500; }
+        .row .id { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+        .missed .id { color: var(--warning); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* FLASH EFFECT */
+        .new-call-flash { animation: flash-bg 0.8s infinite alternate; }
+        @keyframes flash-bg { 
+            from { border-color: #334155; } 
+            to { border-color: var(--accent); box-shadow: 0 0 100px rgba(0, 242, 255, 0.4); } 
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hospital-header">
+        <h1>LA <span>PROVIDENCE</span></h1>
+    </header>
+
+    <div class="now-calling" id="mainBox">
+        <div class="label-top">BINJIRE / ENTER</div>
+        <div class="current-id" id="currId">--</div>
+        <div class="current-name" id="currName">URAKAZA NEZA</div>
+    </div>
+
+    <div class="side-lists">
+        <div class="list-box">
+            <h2>ABATEGEREJE (WAITING)</h2>
+            <div id="waitingList"></div>
+        </div>
+
+        <div class="list-box missed">
+            <h2>ABABUZE (MISSED / RECALL)</h2>
+            <div id="missedList"></div>
+        </div>
+    </div>
+
+    <audio id="ding" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script>
+        const bc = new BroadcastChannel('hospital_tv');
+        const ding = document.getElementById('ding');
+
+        function updateTV() {
+            const current = JSON.parse(localStorage.getItem('c'));
+            const pending = JSON.parse(localStorage.getItem('p')) || [];
+            const missed = JSON.parse(localStorage.getItem('m')) || [];
+            const lab = JSON.parse(localStorage.getItem('l')) || [];
+
+            const oldId = document.getElementById('currId').innerText;
+            const newId = current ? current.id : "--";
+            
+            document.getElementById('currId').innerText = newId;
+            document.getElementById('currName').innerText = current ? current.name : "KANDI 'NEXT' KWA MUGANGA";
+
+            if (newId !== oldId && newId !== "--") {
+                ding.play().catch(() => {});
+                const box = document.getElementById('mainBox');
+                box.classList.add('new-call-flash');
+                setTimeout(() => box.classList.remove('new-call-flash'), 5000);
+            }
+
+            document.getElementById('waitingList').innerHTML = pending.slice(0, 4).map(p => `
+                <div class="row">
+                    <span class="name">${p.name}</span>
+                    <span class="id">${p.id}</span>
+                </div>
+            `).join('') || '<div style="color:#475569; text-align:center; margin-top:20px;">Nta muntu utegereje</div>';
+
+            let combined = [...lab, ...missed];
+            document.getElementById('missedList').innerHTML = combined.slice(0, 3).map(p => `
+                <div class="row">
+                    <span class="name">${p.name}</span>
+                    <span class="id">${p.id}</span>
+                </div>
+            `).join('') || '<div style="color:#475569; text-align:center; margin-top:20px;">-</div>';
+        }
+
+        bc.onmessage = () => updateTV();
+        window.onclick = () => { ding.play().then(()=>ding.pause()); };
+        updateTV();
+    </script>
+</body>
+</html>

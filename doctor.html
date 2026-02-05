@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Panel - Guhamagara</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #ffffff;
+            --accent: #38bdf8; --danger: #f43f5e;
+            --success: #10b981; --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; background: #f1f5f9;
+            margin: 0; padding: 20px; color: #1e293b;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+
+        /* UWO MUGANGA ARIMO KWAKIRA */
+        .current-patient-card {
+            grid-column: span 2; background: var(--bg); color: white;
+            padding: 30px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .big-id { font-size: 80px; font-weight: 900; margin: 0; color: var(--accent); }
+        .big-name { font-size: 30px; margin-bottom: 20px; opacity: 0.9; }
+
+        .main-controls { display: flex; gap: 15px; justify-content: center; }
+
+        /* LISTS */
+        .list-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; font-size: 0.85rem; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-next { background: var(--danger); color: white; font-size: 1.2rem; }
+        .btn-lab { background: var(--accent); color: white; }
+        .btn-missed { background: var(--warning); color: white; }
+        .btn-recall { background: var(--success); color: white; font-size: 0.75rem; padding: 6px 12px; }
+
+        .patient-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid #f8fafc;
+        }
+        .patient-row span { font-weight: 500; }
+        .patient-row b { color: #64748b; margin-right: 8px; }
+
+        .empty-text { color: #cbd5e1; text-align: center; padding: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="current-patient-card">
+            <div style="font-size: 0.8rem; letter-spacing: 2px; opacity: 0.6; margin-bottom: 10px;">UWO URI KWAKIRA UBU</div>
+            <p class="big-id" id="currId">--</p>
+            <div class="big-name" id="currName">READY</div>
+            
+            <div class="main-controls">
+                <button class="btn btn-next" onclick="callNext()">HAMAGARA UKURIKIYEHO (NEXT)</button>
+                <button class="btn btn-lab" onclick="sendToLab()">KOHEREZA MURI LAB</button>
+                <button class="btn btn-missed" onclick="markAsMissed()">ABUZE (MISSED)</button>
+            </div>
+        </div>
+
+        <div class="list-card">
+            <h3>🧪 LAB RECALL (Uvuye muri Lab)</h3>
+            <div id="labList"></div>
+        </div>
+
+        <div class="list-card">
+            <h3>🚫 MISSED RECALL (Uwasibye)</h3>
