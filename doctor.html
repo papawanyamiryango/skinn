@@ -179,45 +179,66 @@
         }
     }
 
-    queueRef.on('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        const p = data.p || [];
-        const c = data.c || null;
-        const l = data.l || [];
-        const m = data.m || [];
+   // Hindura gusa agace ka JavaScript muri "queueRef.on('value', ...)" kabe gutya:
 
-        // Update Sidebar Waiting List (Ibumoso)
-        document.getElementById('countWaiting').innerText = p.length;
-        document.getElementById('waitingList').innerHTML = p.map(pt => `
-            <div class="waiting-card-side">
-                <div>
-                    <b>${pt.id}</b><br>
-                    <small>${pt.name}</small>
-                </div>
-                <button class="btn-siba" onclick="removeFromQueue('${pt.id}')">SIBA</button>
+queueRef.on('value', (snapshot) => {
+    const data = snapshot.val() || {};
+    const p = data.p || [];
+    const c = data.c || null;
+    const l = data.l || [];
+    const m = data.m || [];
+
+    // 1. Update Sidebar Waiting List (Twashyizemo "CALL" aho kuba "SIBA")
+    document.getElementById('countWaiting').innerText = p.length;
+    document.getElementById('waitingList').innerHTML = p.map(pt => `
+        <div class="waiting-card-side" style="border-left: 5px solid var(--success);">
+            <div>
+                <b>${pt.id}</b><br>
+                <small>${pt.name}</small>
             </div>
-        `).join('') || '<p style="color:#94a3b8; text-align:center;">Queue is empty</p>';
+            <button class="btn-next" style="padding: 8px 15px; font-size: 0.8rem; border-radius: 8px;" 
+                onclick="callSpecific('${pt.id}')">CALL</button>
+        </div>
+    `).join('') || '<p style="color:#94a3b8; text-align:center;">Nta muntu utegereje</p>';
 
-        // Update Current Patient (Iburyo)
-        document.getElementById('currId').innerText = c ? c.id : "--";
-        document.getElementById('currName').innerText = c ? c.name : "READY";
+    // 2. Update Current Patient
+    document.getElementById('currId').innerText = c ? c.id : "--";
+    document.getElementById('currName').innerText = c ? c.name : "READY";
 
-        // Update Lab
-        document.getElementById('labList').innerHTML = l.map(pt => `
-            <div class="row">
-                <span><b>${pt.id}</b> ${pt.name}</span>
-                <button class="btn-next" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'l')">CALL</button>
-            </div>
-        `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">No one in Lab</p>';
+    // 3. Update Lab & Missed (Bikomeza uko byari biri)
+    document.getElementById('labList').innerHTML = l.map(pt => `
+        <div class="row">
+            <span><b>${pt.id}</b> ${pt.name}</span>
+            <button class="btn-next" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'l')">CALL</button>
+        </div>
+    `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">Nta muntu uri muri Lab</p>';
 
-        // Update Missed
-        document.getElementById('missedList').innerHTML = m.map(pt => `
-            <div class="row">
-                <span><b>${pt.id}</b> ${pt.name}</span>
-                <button class="btn-missed" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'm')">RECALL</button>
-            </div>
-        `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">No missed calls</p>';
+    document.getElementById('missedList').innerHTML = m.map(pt => `
+        <div class="row">
+            <span><b>${pt.id}</b> ${pt.name}</span>
+            <button class="btn-missed" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'm')">RECALL</button>
+        </div>
+    `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">Nta muntu wasibye</p>';
+});
+
+// 4. Function nshya yo guhamagara uwo ukanzeho (Add this function below your other functions)
+function callSpecific(id) {
+    queueRef.once('value').then(s => {
+        const data = s.val() || {};
+        let p = data.p || [];
+        
+        // Shakisha umurwayi ukanzeho
+        const patient = p.find(x => x.id === id);
+        // Muvane mu rutonde rw'abategereje
+        const remaining = p.filter(x => x.id !== id);
+        
+        // Muheze kuri "Current"
+        queueRef.update({ 
+            p: remaining, 
+            c: patient 
+        });
     });
+}
 </script>
 </body>
 </html>
