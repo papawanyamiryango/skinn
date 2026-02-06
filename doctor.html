@@ -2,175 +2,221 @@
 <html lang="rw">
 <head>
     <meta charset="UTF-8">
-    <title>Doctor Panel - Guhamagara</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Panel - Side Layout</title>
     <style>
         :root {
             --bg: #0f172a; --card: #ffffff;
-            --accent: #38bdf8; --danger: #3f51f4;
+            --accent: #38bdf8; --danger: #ef4444;
             --success: #10b981; --warning: #f59e0b;
         }
         body {
-            font-family: 'Inter', sans-serif; background: #f1f5f9;
-            margin: 0; padding: 20px; color: #1e293b;
+            font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9;
+            margin: 0; padding: 0; height: 100vh; overflow: hidden;
         }
-        .container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+
+        /* 1. LAYOUT Y'IBICE BIBIRI */
+        .wrapper {
+            display: grid;
+            grid-template-columns: 350px 1fr; /* Ibumoso ni 350px, iburyo ni ibisigaye */
+            height: 100vh;
+        }
+
+        /* 2. SIDEBAR (IBUMOSO) */
+        .sidebar {
+            background: #ffffff;
+            border-right: 2px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto; /* Bituma urutonde rumanuka niba ari rurerure */
+        }
+        .sidebar h3 {
+            font-size: 0.9rem; color: #64748b; text-transform: uppercase;
+            border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .waiting-card-side {
+            background: #f8fafc; padding: 15px; border-radius: 12px;
+            border-left: 5px solid var(--accent); margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .waiting-card-side b { font-size: 1.1rem; color: var(--bg); }
+
+        /* 3. MAIN CONTENT (IBURYO) */
+        .main-content {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
         .current-patient-card {
-            grid-column: span 2; background: var(--bg); color: white;
-            padding: 30px; border-radius: 20px; text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            background: var(--bg); color: white; padding: 60px;
+            border-radius: 30px; text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
-        .big-id { font-size: 80px; font-weight: 900; margin: 0; color: var(--accent); }
-        .big-name { font-size: 30px; margin-bottom: 20px; opacity: 0.9; }
+        .big-id { font-size: 120px; font-weight: 900; margin: 10px 0; color: var(--accent); }
+        .big-name { font-size: 40px; margin-bottom: 30px; opacity: 0.9; }
+
+        /* 4. UTUBUTO NA DASHBOARD */
         .main-controls { display: flex; gap: 15px; justify-content: center; }
-        .list-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); min-height: 200px;}
-        h3 { margin-top: 0; font-size: 0.85rem; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-        .btn { padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
-        .btn-next { background: var(--danger); color: rgb(226, 144, 144); font-size: 1.2rem; }
+        .btn { padding: 18px 35px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 1rem; }
+        .btn-next { background: var(--success); color: white; }
         .btn-lab { background: var(--accent); color: white; }
         .btn-missed { background: var(--warning); color: white; }
-        .btn-recall { background: var(--success); color: white; font-size: 0.75rem; padding: 6px 12px; }
-        .patient-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f8fafc; }
-        .empty-text { color: #cbd5e1; text-align: center; padding: 20px; font-style: italic; }
+        .btn-siba { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .list-card { background: white; border-radius: 18px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f8fafc; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="current-patient-card">
-            <div style="font-size: 0.8rem; letter-spacing: 2px; opacity: 0.6; margin-bottom: 10px;">UWO URI KWAKIRA UBU</div>
-            <p class="big-id" id="currId">--</p>
-            <div class="big-name" id="currName">READY</div>
-            
-            <div class="main-controls">
-                <button class="btn btn-next" onclick="callNext()">NEXT (UKURIKIYE)</button>
-                <button class="btn btn-lab" onclick="sendToLab()">KOHEREZA MURI LAB</button>
-                <button class="btn btn-missed" onclick="markAsMissed()">ABUZE (MISSED)</button>
+    <div class="wrapper">
+        <div class="sidebar">
+            <h3>⏳ WAITING QUEUE (<span id="countWaiting">0</span>)</h3>
+            <div id="waitingList">
+                </div>
+        </div>
+
+        <div class="main-content">
+            <div class="current-patient-card">
+                <div style="font-size: 0.9rem; letter-spacing: 4px; opacity: 0.6;">UWO URI KWAKIRA UBU</div>
+                <p class="big-id" id="currId">--</p>
+                <div class="big-name" id="currName">READY</div>
+                
+                <div class="main-controls">
+                    <button class="btn btn-next" onclick="callNext()">NEXT PATIENT</button>
+                    <button class="btn btn-lab" onclick="sendToLab()">SEND TO LAB</button>
+                    <button class="btn btn-missed" onclick="markAsMissed()">MISSED</button>
+                </div>
             </div>
-        </div>
 
-        <div class="list-card">
-            <h3>🧪 LAB RECALL</h3>
-            <div id="labList"></div>
-        </div>
-
-        <div class="list-card">
-            <h3>🚫 MISSED RECALL</h3>
-            <div id="missedList"></div>
+            <div class="bottom-grid">
+                <div class="list-card">
+                    <h3>🧪 LAB RECALL</h3>
+                    <div id="labList"></div>
+                </div>
+                <div class="list-card">
+                    <h3>🚫 MISSED CALLS</h3>
+                    <div id="missedList"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
 <script>
-    // 2. Configuration yawe (Kope hano yawe uvanye kuri Firebase Console)
-     const firebaseConfig = {
+    const firebaseConfig = {
         apiKey: "AIzaSyDuNz2dvLH3NgwzQys9__0sTN0L1kbomFY",
-  authDomain: "providence-e77b1.firebaseapp.com",
-  databaseURL: "https://providence-e77b1-default-rtdb.firebaseio.com",
-  projectId: "providence-e77b1",
-  storageBucket: "providence-e77b1.firebasestorage.app",
-  messagingSenderId: "1042528351641",
-  appId: "1:1042528351641:web:2b1b1231e4341ccf73cf08",
-  measurementId: "G-NP7QFCTSBK"
+        authDomain: "providence-e77b1.firebaseapp.com",
+        databaseURL: "https://providence-e77b1-default-rtdb.firebaseio.com",
+        projectId: "providence-e77b1",
+        storageBucket: "providence-e77b1.firebasestorage.app",
+        messagingSenderId: "1042528351641",
+        appId: "1:1042528351641:web:2b1b1231e4341ccf73cf08"
     };
 
-    // Gutangiza Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const queueRef = db.ref('queue');
 
-    // 3. HAMAGARA NEXT
     function callNext() {
-        queueRef.once('value').then((snapshot) => {
-            const data = snapshot.val() || {};
-            let pending = data.p || [];
-            
-            if (pending.length > 0) {
-                const nextPatient = pending.shift(); // Kuramo uwa mbere
-                queueRef.update({
-                    p: pending,
-                    c: nextPatient // Mubike nka "Current"
-                });
-            } else {
-                alert("Nta murwayi uri ku rutonde!");
-            }
+        queueRef.once('value').then(s => {
+            const data = s.val() || {};
+            let p = data.p || [];
+            if(p.length > 0) {
+                const next = p.shift();
+                queueRef.update({ p: p, c: next });
+            } else { alert("Nta muntu utegereje!"); }
         });
     }
 
-    // 4. KOHEREZA MURI LAB
     function sendToLab() {
-        queueRef.once('value').then((snapshot) => {
-            const data = snapshot.val() || {};
-            if (data.c) {
-                let lab = data.l || [];
-                lab.push(data.c);
-                queueRef.update({
-                    l: lab,
-                    c: null // Kuraho uwo wakiraga
-                });
+        queueRef.once('value').then(s => {
+            const data = s.val() || {};
+            if(data.c) {
+                let l = data.l || [];
+                l.push(data.c);
+                queueRef.update({ l: l, c: null });
             }
         });
     }
 
-    // 5. MARK AS MISSED (ABUZE)
     function markAsMissed() {
-        queueRef.once('value').then((snapshot) => {
-            const data = snapshot.val() || {};
-            if (data.c) {
-                let missed = data.m || [];
-                missed.push(data.c);
-                queueRef.update({
-                    m: missed,
-                    c: null
-                });
+        queueRef.once('value').then(s => {
+            const data = s.val() || {};
+            if(data.c) {
+                let m = data.m || [];
+                m.push(data.c);
+                queueRef.update({ m: m, c: null });
             }
         });
     }
 
-    // 6. RECALL (Guhamagara uvuye muri Lab cyangwa Missed)
     function recall(id, type) {
-        queueRef.once('value').then((snapshot) => {
-            const data = snapshot.val() || {};
+        queueRef.once('value').then(s => {
+            const data = s.val() || {};
             let list = data[type] || [];
             const patient = list.find(p => p.id === id);
             const filtered = list.filter(p => p.id !== id);
-            
-            let updates = {};
-            updates[type] = filtered;
-            updates['c'] = patient;
-            
-            queueRef.update(updates);
+            let up = {}; up[type] = filtered; up['c'] = patient;
+            queueRef.update(up);
         });
     }
 
-    // 7. KUVUGURURA ISURA (UI) - Ibi biba ako kanya (Real-time)
+    function removeFromQueue(id) {
+        if(confirm("Gusiba uyu murwayi?")) {
+            queueRef.once('value').then(s => {
+                const data = s.val() || {};
+                let p = data.p || [];
+                queueRef.update({ p: p.filter(x => x.id !== id) });
+            });
+        }
+    }
+
     queueRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
-        const current = data.c || null;
-        const lab = data.l || [];
-        const missed = data.m || [];
+        const p = data.p || [];
+        const c = data.c || null;
+        const l = data.l || [];
+        const m = data.m || [];
 
-        // Update Current Patient Display
-        document.getElementById('currId').innerText = current ? current.id : "--";
-        document.getElementById('currName').innerText = current ? current.name : "READY";
-
-        // Update Lab List
-        document.getElementById('labList').innerHTML = lab.map(p => `
-            <div class="patient-row">
-                <span><b>${p.id}</b> ${p.name}</span>
-                <button class="btn btn-recall" onclick="recall('${p.id}', 'l')">CALL</button>
+        // Update Sidebar Waiting List (Ibumoso)
+        document.getElementById('countWaiting').innerText = p.length;
+        document.getElementById('waitingList').innerHTML = p.map(pt => `
+            <div class="waiting-card-side">
+                <div>
+                    <b>${pt.id}</b><br>
+                    <small>${pt.name}</small>
+                </div>
+                <button class="btn-siba" onclick="removeFromQueue('${pt.id}')">SIBA</button>
             </div>
-        `).join('') || '<p class="empty-text">Nta muntu uri muri Lab</p>';
+        `).join('') || '<p style="color:#94a3b8; text-align:center;">Queue is empty</p>';
 
-        // Update Missed List
-        document.getElementById('missedList').innerHTML = missed.map(p => `
-            <div class="patient-row">
-                <span><b>${p.id}</b> ${p.name}</span>
-                <button class="btn btn-recall" onclick="recall('${p.id}', 'm')">RE-CALL</button>
+        // Update Current Patient (Iburyo)
+        document.getElementById('currId').innerText = c ? c.id : "--";
+        document.getElementById('currName').innerText = c ? c.name : "READY";
+
+        // Update Lab
+        document.getElementById('labList').innerHTML = l.map(pt => `
+            <div class="row">
+                <span><b>${pt.id}</b> ${pt.name}</span>
+                <button class="btn-next" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'l')">CALL</button>
             </div>
-        `).join('') || '<p class="empty-text">Nta muntu wasibye</p>';
+        `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">No one in Lab</p>';
+
+        // Update Missed
+        document.getElementById('missedList').innerHTML = m.map(pt => `
+            <div class="row">
+                <span><b>${pt.id}</b> ${pt.name}</span>
+                <button class="btn-missed" style="padding:5px 10px; font-size:0.7rem;" onclick="recall('${pt.id}', 'm')">RECALL</button>
+            </div>
+        `).join('') || '<p style="color:#cbd5e1; font-size:0.8rem">No missed calls</p>';
     });
 </script>
 </body>
